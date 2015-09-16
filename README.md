@@ -6,7 +6,7 @@ Example: Listen to changes from all databases and collections.
 
 var listener = require('mongo-watcher');
 
-var changeStream = listener();
+var changeStream = listener.listen();
 
 changeStream.on('data', function(data) {
   console.log(data);
@@ -25,7 +25,7 @@ var options = {
   database: 'logging'
 };
 
-var changeStream = listener(options);
+var changeStream = listener.listen(options);
 
 changeStream.on('data', function(data) {
   console.log(data);
