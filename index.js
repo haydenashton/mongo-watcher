@@ -12,6 +12,9 @@ exports.listen = function(options) {
     noCursorTimeout: true
   };
 
+  var database = options.database || '.*';
+  var collection = options.collection || '.*';
+
   var out = new OutStream();
 
   MongoClient.connect(url, function(err, db) {
@@ -19,15 +22,15 @@ exports.listen = function(options) {
 
     var dbCollection = db.collection(oplogCollection);
 
-    var stream = dbCollection.find({}, args).stream();
+    var q = {'ns': new RegExp(database + '\.' + collection)};
+    var stream = dbCollection.find(q, args).stream();
 
-    stream.on('data', function(document) {
-      out.write(document);
+    stream.on('data', function(update) {
+      out.write(update);
     });
 
     stream.on('close', function() {
-      console.log("Stream Closed");
-      out.close();
+      out.end();
       db.close();
     });
   });
