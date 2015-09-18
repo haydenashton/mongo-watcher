@@ -9,6 +9,6 @@
   "dependencies": {
     "mongodb": "~2.0.43"
   },
-  "author": "",
+  "author": "Hayden",
   "license": "MIT"
 }
