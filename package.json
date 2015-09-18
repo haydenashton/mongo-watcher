@@ -1,0 +1,14 @@
+{
+  "name": "mongo-watcher",
+  "version": "0.0.1",
+  "description": "Watch for changes in Mongodb",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "mongodb": "~2.0.43"
+  },
+  "author": "",
+  "license": "MIT"
+}
