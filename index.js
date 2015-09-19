@@ -17,8 +17,9 @@ exports.listen = function(options) {
   MongoClient.connect(url, function(err, db) {
     console.log("Listening to changes...");
 
-    var collection = db.collection(oplogCollection);
-    var stream = collection.find({}, args).stream();
+    var dbCollection = db.collection(oplogCollection);
+
+    var stream = dbCollection.find({}, args).stream();
 
     stream.on('data', function(document) {
       out.write(document);
@@ -33,8 +34,3 @@ exports.listen = function(options) {
 
   return out;
 };
-
-var changeStream = exports.listen();
-changeStream.on('data', function(data){
-  console.log(data);
-});
