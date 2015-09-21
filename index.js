@@ -1,5 +1,5 @@
-var MongoClient = require('mongodb').MongoClient;
-var OpLog = require('./lib/oplog.js');
+var MongoDB = require('mongodb');
+var MongoClient = MongoDB.MongoClient;
 var OutStream = require('./lib/oplog-stream.js');
 
 exports.listen = function(options) {
@@ -9,37 +9,64 @@ exports.listen = function(options) {
   var out = getOutStream();
 
   MongoClient.connect(url, function(err, db) {
+
+    if(err) { throw new Error(err); }
+
     var dbCollection = db.collection(options.oplogName);
-    var q = {'ns': new RegExp(options.database +
-                   '\.' + options.collection)
-            };
 
     db.on('close', function() {
       out.end();
     });
 
-    runQuery(db, dbCollection, q, out);
+    runQuery(options, dbCollection, out);
   });
 
   return out;
 };
 
 
-function runQuery(db, dbCollection, q, out) {
+function getLatestChange(collection, callback) {
+  collection.find({}, {"ts": 1})
+            .sort({$natural: -1})
+            .limit(1)
+            .toArray(function(err, docs) {
+              if(err) return callback(err);
+
+              if(docs.length && docs[0].ts) {
+                callback(null, docs[0].ts);
+              }
+              else {
+                callback(null,
+                         MongoDB.Timestamp(0, Math.floor(new Date().getTime() / 1000)));
+              }
+  });
+}
+
+
+function runQuery(options, dbCollection, out) {
   var args = {
     tailable: true,
     awaitData: true,
     noCursorTimeout: true
   };
 
-  var stream = dbCollection.find(q, args).stream();
+  getLatestChange(dbCollection, function(err, timestamp) {
+    if(err) { throw new Error(err); }
 
-  stream.on('data', function(update) {
-    out.write(update);
-  });
+    var q = {'ns': new RegExp(options.database +
+                   '\.' + options.collection),
+             'ts': {$gt: timestamp}
+            };
 
-  stream.on('close', function() {
-    runQuery(db, dbCollection, q, out);
+    var stream = dbCollection.find(q, args).stream();
+
+    stream.on('data', function(update) {
+      out.write(update);
+    });
+
+    stream.on('close', function() {
+      runQuery(options, dbCollection, out);
+    });
   });
 }
 
